@@ -33,6 +33,11 @@
       border-radius: 10px;
       position: relative;
       cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .peg.invalid {
+      background: #f6bcbc;
     }
 
     .rod {
@@ -62,12 +67,13 @@
       font-size: 1.2em;
       color: darkgreen;
       font-weight: bold;
+      white-space: pre-wrap;
     }
   </style>
 </head>
 <body>
   <h1>Towers of Hanoi</h1>
-  <p>Click a peg to pick up or place a disk. The held disk follows your cursor!</p>
+  <p>Click a peg to pick up or place a disk.</p>
 
   <div id="game">
     <div class="peg" id="peg1"><div class="rod"></div></div>
@@ -75,18 +81,21 @@
     <div class="peg" id="peg3"><div class="rod"></div></div>
   </div>
 
-  <div id="message">🎉 You solved it! Secret message: <strong>“THE PASSWORD IS BABEL”</strong></div>
+  <div id="message"></div>
 
   <script>
     const numDisks = 4;
     const pegs = [[], [], []];
     const pegEls = [...document.querySelectorAll('.peg')];
-    const game = document.getElementById("game");
+    const messageEl = document.getElementById("message");
 
     let heldDisk = null;
     let heldDiskEl = null;
 
-    // initialize
+    // --- Secret message (encoded) ---
+    const secretEncoded = "VEhFIFBBU1NXT1JEIElTIEJBQkVM"; // base64 of "THE PASSWORD IS BABEL"
+
+    // --- Initialization ---
     for (let i = numDisks; i >= 1; i--) pegs[0].push(i);
     render();
 
@@ -94,7 +103,6 @@
       pegEl.addEventListener('click', () => handleClick(i));
     });
 
-    // Mouse tracking
     document.addEventListener('mousemove', e => {
       if (heldDiskEl) {
         heldDiskEl.style.position = 'fixed';
@@ -106,15 +114,23 @@
     });
 
     function handleClick(pegIndex) {
+      const pegEl = pegEls[pegIndex];
+
       if (heldDisk === null) {
-        // pick up top disk if any
+        // Pick up disk
         heldDisk = pegs[pegIndex].pop() ?? null;
         if (heldDisk !== null) {
           heldDiskEl = createDiskElement(heldDisk);
           heldDiskEl.style.opacity = 0.8;
+          heldDiskEl.style.position = 'fixed';
+          heldDiskEl.style.left = '-9999px';
           document.body.appendChild(heldDiskEl);
+          requestAnimationFrame(() => {
+            // Force a repaint before it follows mouse
+          });
         }
       } else {
+        // Attempt to place disk
         const targetTop = pegs[pegIndex][pegs[pegIndex].length - 1];
         if (!targetTop || targetTop > heldDisk) {
           pegs[pegIndex].push(heldDisk);
@@ -125,7 +141,9 @@
           }
           checkSolved();
         } else {
-          alert("Can't place larger disk on smaller one!");
+          // invalid move: flash peg
+          pegEl.classList.add('invalid');
+          setTimeout(() => pegEl.classList.remove('invalid'), 200);
         }
       }
       render();
@@ -152,7 +170,9 @@
 
     function checkSolved() {
       if (pegs[2].length === numDisks) {
-        document.getElementById("message").style.display = "block";
+        const secretDecoded = atob(secretEncoded);
+        messageEl.style.display = "block";
+        messageEl.textContent = `🎉 \n${secretDecoded}`;
       }
     }
   </script>
