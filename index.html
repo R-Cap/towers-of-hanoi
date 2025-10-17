@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Towers of Hanoi</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f2f2f2;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      user-select: none;
+    }
+
+    h1 {
+      margin-bottom: 0;
+    }
+
+    #game {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      height: 300px;
+      margin-top: 40px;
+      gap: 40px;
+    }
+
+    .peg {
+      width: 120px;
+      height: 250px;
+      background: #ddd;
+      border-radius: 10px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .rod {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 10px;
+      height: 200px;
+      background: #666;
+    }
+
+    .disk {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 24px;
+      border-radius: 4px;
+      pointer-events: none;
+      transition: transform 0.1s ease;
+    }
+
+    #message {
+      display: none;
+      margin-top: 30px;
+      font-size: 1.2em;
+      color: darkgreen;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Towers of Hanoi</h1>
+  <p>Click a peg to pick up or place a disk. The held disk follows your cursor!</p>
+
+  <div id="game">
+    <div class="peg" id="peg1"><div class="rod"></div></div>
+    <div class="peg" id="peg2"><div class="rod"></div></div>
+    <div class="peg" id="peg3"><div class="rod"></div></div>
+  </div>
+
+  <div id="message">🎉 You solved it! Secret message: <strong>“THE PASSWORD IS BABEL”</strong></div>
+
+  <script>
+    const numDisks = 4;
+    const pegs = [[], [], []];
+    const pegEls = [...document.querySelectorAll('.peg')];
+    const game = document.getElementById("game");
+
+    let heldDisk = null;
+    let heldDiskEl = null;
+
+    // initialize
+    for (let i = numDisks; i >= 1; i--) pegs[0].push(i);
+    render();
+
+    pegEls.forEach((pegEl, i) => {
+      pegEl.addEventListener('click', () => handleClick(i));
+    });
+
+    // Mouse tracking
+    document.addEventListener('mousemove', e => {
+      if (heldDiskEl) {
+        heldDiskEl.style.position = 'fixed';
+        heldDiskEl.style.left = `${e.clientX}px`;
+        heldDiskEl.style.top = `${e.clientY - 20}px`;
+        heldDiskEl.style.zIndex = 1000;
+        heldDiskEl.style.transform = 'translate(-50%, -50%)';
+      }
+    });
+
+    function handleClick(pegIndex) {
+      if (heldDisk === null) {
+        // pick up top disk if any
+        heldDisk = pegs[pegIndex].pop() ?? null;
+        if (heldDisk !== null) {
+          heldDiskEl = createDiskElement(heldDisk);
+          heldDiskEl.style.opacity = 0.8;
+          document.body.appendChild(heldDiskEl);
+        }
+      } else {
+        const targetTop = pegs[pegIndex][pegs[pegIndex].length - 1];
+        if (!targetTop || targetTop > heldDisk) {
+          pegs[pegIndex].push(heldDisk);
+          heldDisk = null;
+          if (heldDiskEl) {
+            heldDiskEl.remove();
+            heldDiskEl = null;
+          }
+          checkSolved();
+        } else {
+          alert("Can't place larger disk on smaller one!");
+        }
+      }
+      render();
+    }
+
+    function createDiskElement(size) {
+      const disk = document.createElement('div');
+      disk.className = 'disk';
+      disk.style.width = `${40 + size * 20}px`;
+      disk.style.background = `hsl(${size * 60}, 70%, 60%)`;
+      return disk;
+    }
+
+    function render() {
+      pegEls.forEach((pegEl, i) => {
+        pegEl.querySelectorAll('.disk').forEach(d => d.remove());
+        pegs[i].forEach((size, j) => {
+          const disk = createDiskElement(size);
+          disk.style.bottom = `${j * 26}px`;
+          pegEl.appendChild(disk);
+        });
+      });
+    }
+
+    function checkSolved() {
+      if (pegs[2].length === numDisks) {
+        document.getElementById("message").style.display = "block";
+      }
+    }
+  </script>
+</body>
+</html>
